@@ -1,0 +1,24 @@
+{
+  "originHash" : "5cf4766c7b6acc12a6f2ab3db0954c0174068db69e9ae606d7ac950ad7ac3115",
+  "pins" : [
+    {
+      "identity" : "alamofire",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Alamofire/Alamofire",
+      "state" : {
+        "revision" : "f455c2975872ccd2d9c81594c658af65716e9b9a",
+        "version" : "5.9.1"
+      }
+    },
+    {
+      "identity" : "telegram-bot-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rapierorg/telegram-bot-swift",
+      "state" : {
+        "revision" : "c03186fdbde69be648be33c57793a2d83c5a8256",
+        "version" : "2.1.2"
+      }
+    }
+  ],
+  "version" : 3
+}
