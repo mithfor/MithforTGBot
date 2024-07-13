@@ -44,6 +44,8 @@ enum CommonCommands: CaseIterable {
 let tgToken = readToken(from: "TG_TOKEN")
 let aiToken = readToken(from: "AI_TOKEN")
 let botName = "MithforTelegramBot"
+let noResponseFromChatGPT = "\(botName): No response from chatGPT... \n Developer: Check VPN-connection or token!"
+let responseFromChatGPT = "\(botName): ChatGPT activated."
 
 // MARK: - Services Initialization
 let bot = TelegramBot(token: tgToken)
@@ -69,11 +71,6 @@ func asyncTaskForAIService(promptText: String, context: Context, role: SenderRol
     context.respondAsync(responseText?.choices.first?.message.content ?? noResponseFromChatGPT)
 }
 
-// MARK: - Response handlers
-
-let noResponseFromChatGPT = "\(botName): No response from chatGPT... \n Developer! Check VPN-connection or token!"
-let responseFromChatGPT = "\(botName): ChatGPT activated."
-
 // MARK: - Command Handlers
 
 func greetHandler(context: Context) -> Bool {
@@ -92,7 +89,7 @@ func newChatMembers(context: Context) -> Bool {
 }
 
 func nameHandler(context: Context) -> Bool {
-    let text = "My name is MithforTelegramBot"
+    let text = "My name is \(botName)"
     context.respondAsync(text)
     return true
 }
@@ -105,7 +102,7 @@ func statusHandler(context: Context) -> Bool {
 func startHandler(context: Context) -> Bool {
     if #available(macOS 10.15, *) {
         Task {
-            let promptText = "Hello. You will provide a detailed overview of Latoken. Discuss its history, key features, and services it offers. Additionally, explain the platform's security measures, the types of assets available for trading, the user experience, and any notable partnerships or achievements."
+            let promptText = "Hello. You will provide a detailed overview of Latoken. Discuss its history, key features, and services it offers. Additionally, explain the platform's security measures, the types of assets available for trading, the user experience, and any notable partnerships or achievements.  Try search from here: https://deliver.latoken.com/hackathon and from here https://deliver.latoken.com/hackathon and football. You are only allowed to talk me about latoken."
             context.respondAsync("Starting...")
             do {
                 try await asyncTaskForAIService(promptText: promptText, context: context, role: .system)
@@ -147,11 +144,12 @@ func chatGPTHandler(context: Context) -> Bool {
 }
 
 func defaultHandler(context: Context) -> Bool {
+    context.respondSync("Processing...")
+    let messageText = context.args.scanRestOfString()
     if isChatGptConversationStarted {
         if #available(macOS 10.15, *) {
             Task {
-                context.respondAsync("Processing...")
-                let messageText = context.args.scanRestOfString()
+                
                 try await asyncTaskForAIService(promptText: messageText, context: context)
             }
         } else {
@@ -181,3 +179,5 @@ while let update = bot.nextUpdateSync() {
     print("Update: \(update)")
     try router.process(update: update)
 }
+
+fatalError("Server stopped due to error: \(String(describing: bot.lastError))")
