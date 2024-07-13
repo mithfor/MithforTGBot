@@ -14,20 +14,23 @@ struct Message: Encodable {
     let content: String
     let createAt: Date
 }
+
 class OpenAIService {
     
     private var endPointUrl = "https://api.openai.com/v1/chat/completions"
     @available(macOS 10.15.0, *)
     func sendMessage(messages: [Message]) async -> OpenAIChatResponse? {
-        let openAIChatMesages = messages.map {
+        let openAIChatMessages = messages.map {
             OpenAIChatMessage(role: $0.role,
                               content: $0.content)
         }
         
-        let body = OpenAIChatBody(model: "gpt-4o", messages: openAIChatMesages)
+        let body = OpenAIChatBody(model: "gpt-4o", messages: openAIChatMessages)
         let headers: HTTPHeaders = [
             "Authorization": "Bearer \(aiToken)"
         ]
+        print(headers)
+        print(body)
         return try? await AF.request(
             endPointUrl,
             method: .post,

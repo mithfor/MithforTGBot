@@ -53,7 +53,7 @@
       <EnvironmentVariables>
          <EnvironmentVariable
             key = "AI_TOKEN"
-            value = "sk-proj-XDCGSaBIwRkqyPVefIOhT3BlbkFJlgzaEsiwmJLy5uIBBuHs"
+            value = "sk-proj-hx8wIBzAa7XdMUyydV2wT3BlbkFJJYWVmKCzWOjVRP9Sq6rS"
             isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable

@@ -8,7 +8,7 @@ import TelegramBotSDK
 enum CommonCommands: CaseIterable {
     case greet
     case name
-    case letStart
+    case start
     case help
     case chatGPT
     
@@ -18,41 +18,58 @@ enum CommonCommands: CaseIterable {
             return "greet"
         case .name:
             return "name"
-        case .letStart:
-            return "letstart"
+        case .start:
+            return "start"
         case .help:
             return "help"
         case .chatGPT:
             return "chatGPT"
         }
-        
+    }
+    
+    var comment: String {
+        switch self {
+        case .chatGPT:
+             return " (deprecated). Use simple question instead"
+        default:
+            return ""
+        }
     }
 }
 
 // MARK: - Constants
 let tgToken = readToken(from: "TG_TOKEN")
 let aiToken = readToken(from: "AI_TOKEN")
+let botName = "MithforTelegramBot"
 
 // MARK: - Services Initialization
 let bot = TelegramBot(token: tgToken)
 let router = Router(bot: bot)
 router.partialMatch = nil
 let aiService = OpenAIService()
+var isChatGptConversationStarted = false
 
 // MARK: - Helper Functions
 
 @available(macOS 10.15.0, *)
-func asyncTaskForAIService(promptText: String, context: Context) async {
+func asyncTaskForAIService(promptText: String, context: Context, role: SenderRole = .user) async throws {
     let aiMessage = Message(
         id: UUID(),
-        role: .user,
+        role: role,
         content: promptText,
         createAt: Date()
     )
+    let responseText = await aiService.sendMessage(
+        messages: [aiMessage]
+    )
     
-    let text = await aiService.sendMessage(messages: [aiMessage])
-    context.respondAsync(text?.choices.first?.message.content ?? "empty answer")
+    context.respondAsync(responseText?.choices.first?.message.content ?? noResponseFromChatGPT)
 }
+
+// MARK: - Response handlers
+
+let noResponseFromChatGPT = "\(botName): No response from chatGPT... \n Developer! Check VPN-connection or token!"
+let responseFromChatGPT = "\(botName): ChatGPT activated."
 
 // MARK: - Command Handlers
 
@@ -68,11 +85,19 @@ func nameHandler(context: Context) -> Bool {
     return true
 }
 
-func letStartHandler(context: Context) -> Bool {
+func startHandler(context: Context) -> Bool {
     if #available(macOS 10.15, *) {
         Task {
-            let promptText = "You are Latoken assistant. You will help me to know about latoken as much as possible."
-            await asyncTaskForAIService(promptText: promptText, context: context)
+            let promptText = "Hello. You will provide a detailed overview of Latoken. Discuss its history, key features, and services it offers. Additionally, explain the platform's security measures, the types of assets available for trading, the user experience, and any notable partnerships or achievements."
+            context.respondAsync("Starting...")
+            do {
+                try await asyncTaskForAIService(promptText: promptText, context: context, role: .system)
+                context.respondAsync(responseFromChatGPT)
+                isChatGptConversationStarted = true
+            } catch {
+                context.respondAsync(noResponseFromChatGPT)
+                isChatGptConversationStarted = false
+            }
         }
     } else {
         // Fallback on earlier versions
@@ -83,32 +108,54 @@ func letStartHandler(context: Context) -> Bool {
 
 func helpHandler(context: Context) -> Bool {
     for cmd in CommonCommands.allCases {
-        context.respondAsync(cmd.description)
+        context.respondAsync("\(cmd.description) \(cmd.comment)")
     }
     return true
 }
 
 func chatGPTHandler(context: Context) -> Bool {
-    if #available(macOS 10.15, *) {
-        Task {
-            context.respondAsync("Processing...")
-            let messageText = context.args.scanRestOfString()
-            await asyncTaskForAIService(promptText: messageText, context: context)
+//    if #available(macOS 10.15, *) {
+//        Task {
+//            context.respondAsync("Processing...")
+//            let messageText = context.args.scanRestOfString()
+//            await asyncTaskForAIService(promptText: messageText, context: context)
+//        }
+//    } else {
+//        // Fallback on earlier versions
+//        print("Unsupported macOS version. Please update to macOS 10.15 or later.")
+//    }
+//    return true
+    context.respondAsync("\(CommonCommands.chatGPT.description) \(CommonCommands.chatGPT.comment)")
+    return defaultHandler(context: context)
+}
+
+func defaultHandler(context: Context) -> Bool {
+    if isChatGptConversationStarted {
+        if #available(macOS 10.15, *) {
+            Task {
+                context.respondAsync("Processing...")
+                let messageText = context.args.scanRestOfString()
+                try await asyncTaskForAIService(promptText: messageText, context: context)
+            }
+        } else {
+            // Fallback on earlier versions
+            print("Unsupported macOS version. Please update to macOS 10.15 or later.")
         }
     } else {
-        // Fallback on earlier versions
-        print("Unsupported macOS version. Please update to macOS 10.15 or later.")
+        context.respondAsync("ChatGPT Conversation not initialized. Use /start command")
     }
     return true
 }
+
 
 // MARK: - Router Configuration
 
 router[CommonCommands.greet.description] = greetHandler
 router[CommonCommands.name.description] = nameHandler
-router[CommonCommands.letStart.description] = letStartHandler
+router[CommonCommands.start.description] = startHandler
 router[CommonCommands.help.description] = helpHandler
 router[CommonCommands.chatGPT.description] = chatGPTHandler
+router[.text] = defaultHandler
 
 // MARK: - Main Update Loop
 while let update = bot.nextUpdateSync() {
@@ -117,7 +164,8 @@ while let update = bot.nextUpdateSync() {
 }
 
 //let tgToken = readToken(from: "TG_TOKEN")
-//let aiToken = readToken(from: "AI_TOKEN")
+//let aiToken = "sk-proj-hx8wIBzAa7XdMUyydV2wT3BlbkFJJYWVmKCzWOjVRP9Sq6rS"
+////let aiToken = readToken(from: "AI_TOKEN")
 //let bot = TelegramBot(token: tgToken)
 //let router = Router(bot: bot)
 //router.partialMatch = nil
@@ -186,4 +234,4 @@ while let update = bot.nextUpdateSync() {
 //    print(update)
 //    try router.process(update: update)
 //}
-
+//
