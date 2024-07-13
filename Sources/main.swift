@@ -11,6 +11,7 @@ enum CommonCommands: CaseIterable {
     case start
     case help
     case chatGPT
+    case status
     
     var description: String {
         switch self {
@@ -24,6 +25,8 @@ enum CommonCommands: CaseIterable {
             return "help"
         case .chatGPT:
             return "chatGPT"
+        case.status:
+            return "status"
         }
     }
     
@@ -91,6 +94,11 @@ func newChatMembers(context: Context) -> Bool {
 func nameHandler(context: Context) -> Bool {
     let text = "My name is MithforTelegramBot"
     context.respondAsync(text)
+    return true
+}
+
+func statusHandler(context: Context) -> Bool {
+    context.respondSync(isChatGptConversationStarted ? "chatGPT is active" : "chatGPT is NOT active")
     return true
 }
 
@@ -165,6 +173,7 @@ router[CommonCommands.start.description] = startHandler
 router[CommonCommands.help.description] = helpHandler
 router[CommonCommands.chatGPT.description] = chatGPTHandler
 router[.newChatMembers] = newChatMembers
+router[CommonCommands.status.description] = statusHandler
 router[.text] = defaultHandler
 
 // MARK: - Main Update Loop
