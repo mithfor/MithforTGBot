@@ -79,6 +79,15 @@ func greetHandler(context: Context) -> Bool {
     return true
 }
 
+func newChatMembers(context: Context) -> Bool {
+    guard let users = context.message?.newChatMembers else { return false }
+    for user in users {
+        guard user.id != bot.user.id else { continue }
+        context.respondAsync("Welcome, \(user.firstName)!")
+    }
+    return true
+}
+
 func nameHandler(context: Context) -> Bool {
     let text = "My name is MithforTelegramBot"
     context.respondAsync(text)
@@ -155,10 +164,11 @@ router[CommonCommands.name.description] = nameHandler
 router[CommonCommands.start.description] = startHandler
 router[CommonCommands.help.description] = helpHandler
 router[CommonCommands.chatGPT.description] = chatGPTHandler
+router[.newChatMembers] = newChatMembers
 router[.text] = defaultHandler
 
 // MARK: - Main Update Loop
 while let update = bot.nextUpdateSync() {
-    print(update)
+    print("Update: \(update)")
     try router.process(update: update)
 }
